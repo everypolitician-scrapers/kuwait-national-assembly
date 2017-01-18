@@ -1,5 +1,6 @@
 #!/bin/env ruby
 # encoding: utf-8
+# frozen_string_literal: true
 
 require 'scraperwiki'
 require 'nokogiri'
@@ -10,7 +11,7 @@ OpenURI::Cache.cache_path = '.cache'
 
 class String
   def tidy
-    self.gsub(/[[:space:]]+/, ' ').strip
+    gsub(/[[:space:]]+/, ' ').strip
   end
 end
 
@@ -22,26 +23,26 @@ def scrape_list(url)
   noko = noko_for(url)
   noko.xpath('//a[contains(@href,"clt/run.asp?id=")][.//img]').each do |a|
     source = a.attr('href')
-    data = { 
-      id: source[/id=(\d+)/, 1],
-      name: a.xpath('following::text()').find { |n| !n.text.tidy.empty? }.text.tidy,
-      party: "Independent",
-      image: a.css('img/@src').text,
-      term: 14,
+    data = {
+      id:     source[/id=(\d+)/, 1],
+      name:   a.xpath('following::text()').find { |n| !n.text.tidy.empty? }.text.tidy,
+      party:  'Independent',
+      image:  a.css('img/@src').text,
+      term:   14,
       source: source,
     }
     data.merge! scrape_person(data)
-    ScraperWiki.save_sqlite([:id, :term], data)
+    ScraperWiki.save_sqlite(%i(id term), data)
   end
 end
 
 def scrape_person(p)
   noko = noko_for(p[:source])
   constituency = 'الدائرة الانتخابية'
-  return { 
+  {
     name__ar: noko.css('img[src="%s"]' % p[:image]).xpath('following::text()').find { |n| !n.text.tidy.empty? }.text.tidy,
 
-    area: noko.xpath('//p[contains(.,"%s")]' % constituency).text.tidy,
+    area:     noko.xpath('//p[contains(.,"%s")]' % constituency).text.tidy,
   }
 end
 
